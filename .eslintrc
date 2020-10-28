@@ -1,0 +1,58 @@
+{
+    "env": {
+        "browser": true,
+        "node": true,
+        "es6": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "prettier",
+        "google"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly"
+    },
+    "parserOptions": {
+        "ecmaVersion": 11,
+        "sourceType": "module"
+    },
+    "rules": {
+        "new-cap": 0,
+        "comma-dangle": 0,
+        "indent": ["error", 4],
+        "guard-for-in": 0,
+        "max-len": [2, {"code": 120, "tabWidth": 4}],
+        "space-before-function-paren": ["error", "always"],
+        "require-jsdoc": ["error", {
+            "require": {
+                "FunctionDeclaration": true,
+                "MethodDefinition": false,
+                "ClassDeclaration": false,
+                "ArrowFunctionExpression": false,
+                "FunctionExpression": false
+            }
+        }],
+        "valid-jsdoc": [2, {
+            "requireReturnType": true,
+            "requireParamDescription": true,
+            "requireReturnDescription": true
+        }]
+    },
+    "settings": {
+        "import/resolver": {
+            "alias": {
+                "map": [
+                    ["@sgen", "."]
+                ],
+                "extensions": [".ts", ".js", ".jsx", ".json"]
+            }
+        }
+    },
+    "ignorePatterns": [
+        "__tests__/*"
+    ],
+    "plugins": [
+        "requirejs"
+    ]
+}
