@@ -12,7 +12,7 @@ class GetOutsideContributors {
     }
 
     async execute () {
-        const members = await this.client.getAllTeamMembers(this.org, this.employeeTeam);
+        const members = await this.client.getAllOrgMembers(this.org);
         const repos = await this.client.getAllRepos(this.org);
         const result = [];
 

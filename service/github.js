@@ -48,8 +48,8 @@ class Github {
                 console.log('Error occurred during getting contributors: ' + error);
                 throw error;
             });
-
-            repos = [...repos, ...temporary];
+            const isRepositoryEmpty = JSON.stringify(temporary) === '{}';
+            if (!isRepositoryEmpty) { repos = [...repos, ...temporary] };
         } while (temporary.length === perPage);
 
         return repos;
@@ -64,6 +64,30 @@ class Github {
             temporary = await this.client.teams.listMembersInOrg({
                 org: org,
                 team_slug: team,
+                per_page: perPage,
+                page: ++i
+            }).then((res) => {
+                return res['data'] || {};
+            }).catch((error) => {
+                console.log('Error occurred during getting team members list: ' + error);
+                throw error;
+            });
+
+            members = [...members, ...temporary];
+        } while (temporary.length === perPage);
+
+        return members.map((member) => member.login);
+    }
+
+    async getAllOrgMembers (org, ) {
+        console.log(`Getting team members list`);
+        let i = 0;
+        const perPage = 100;
+        let members = [];
+        let temporary;
+        do {
+            temporary = await this.client.request('GET /orgs/{org}/members', {
+                org: org,
                 per_page: perPage,
                 page: ++i
             }).then((res) => {
