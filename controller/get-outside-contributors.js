@@ -1,35 +1,42 @@
 const GithubClient = require('~/service/github');
 const _lodash = require('lodash');
-const JSONWriter = require('~/writer/json');
+const Writer = require('~/writer');
 
 class GetOutsideContributors {
-    constructor (org, repos, employeeTeam) {
-        this.org = org || 'adobe';
-        this.repos = repos || [];
-        this.employeeTeam = employeeTeam || 'all-adobe';
+    constructor (org = 'adobe', repos = [], excludeCompany = '@adobe', writer) {
+        this.org = org;
+        this.repos = repos;
+        this.excludeCompany = excludeCompany;
         this.client = new GithubClient();
-        this.JSONwriter = new JSONWriter();
+        this.writer = (new Writer()).get(writer);
     }
 
     async execute () {
         const members = await this.client.getAllOrgMembers(this.org);
-        const repos = await this.client.getAllRepos(this.org);
+        const repos = this.repos.length ? this.repos : await this.client.getAllRepos(this.org);
         const result = [];
 
         for (const repo of repos) {
-            let allContributors = await this.client.getAllContributors(repo);
+            const repositoryName = repo.name || repo;
+            let allContributors = await this.client.getAllContributors(repositoryName, this.org);
             allContributors = allContributors.map((contributor) => contributor.login);
-            const outsideContributors = _lodash.difference(allContributors, members);
+            let outsideContributors = await this.client.getUsers(
+                _lodash.difference(allContributors, members)
+            );
+            outsideContributors = outsideContributors.filter(
+                (user) => !user.company || user.company.trim() !== this.excludeCompany
+            ).map(user => user.login);
+            
             result.push({
-                repository: repo.name,
+                repository: repositoryName,
                 outsideContributorsTotal: outsideContributors.length,
                 contributorsTotal: allContributors.length,
                 outsideContributors,
                 contributors: allContributors
             });
         }
-        await this.JSONwriter.execute(
-            'get-outside-contributors-all-repos',
+        await this.writer.execute(
+            `get-outside-contributors-${(new Date()).getTime()}`,
             result.sort((first, second) => second.outsideContributorsTotal - first.outsideContributorsTotal)
         );
     }

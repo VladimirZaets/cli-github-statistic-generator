@@ -1,26 +1,29 @@
 const GithubClient = require('~/service/github');
-const JSONWriter = require('~/writer/json');
+const Writer = require('~/writer');
 
 class GetReposWithoutCommits {
-    constructor (org) {
-        this.org = org || 'adobe';
-        this.repos = [];
+    constructor (org = 'adobe', repos = [], writer) {
+        this.org = org;
+        this.repos = repos;
         this.client = new GithubClient();
-        this.JSONwriter = new JSONWriter();
+        this.writer = (new Writer()).get(writer);
     }
 
     async execute () {
-        const repos = await this.client.getAllRepos(this.org);
+        const repos = this.repos.length ? this.repos : await this.client.getAllRepos(this.org);
         const result = [];
 
         for (const repo of repos) {
-            const content = await this.client.getCommitActivityStats(this.org, repo.name);
+            const repositoryName = repo.name || repo;
+            const content = await this.client.getCommitActivityStats(this.org, repositoryName);
             const repoWithoutCommits = content.filter((item) => item.total);
             if (!repoWithoutCommits.length) {
-                result.push(repo.name);
+                result.push({
+                    repository: repositoryName
+                });
             }
         }
-        await this.JSONwriter.execute(`get-repos-without-commits`, result);
+        await this.writer.execute(`get-repos-without-commits-${(new Date().getTime())}`, result);
     }
 }
 

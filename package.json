@@ -16,6 +16,7 @@
     "@octokit/graphql": "^4.5.4",
     "@octokit/rest": "^17.0.1",
     "commander": "^6.2.0",
+    "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
     "lodash": "^4.17.11",
     "module-alias": "^2.2.2"
