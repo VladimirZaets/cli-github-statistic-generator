@@ -2,6 +2,12 @@ const fs = require('fs');
 const cachePath = './cache'
 
 class CacheManager {
+    constructor() {
+        if (!fs.existsSync(`./cache`)){
+            fs.mkdirSync('./cache')
+        }
+    }
+    
     isExist (key) {
         return fs.existsSync(`${cachePath}/${key}.json`);
     }
