@@ -1,6 +1,8 @@
 const Octokit = require('@octokit/rest').Octokit;
 const config = require('dotenv').config();
 const CacheManager = require('~/cache-manager');
+const { graphql } = require("@octokit/graphql");
+const format = require('date-fns/format')
 
 class Github {
     constructor () {
@@ -41,7 +43,7 @@ class Github {
         this.cacheManager.set(key, result);
         return result;
     }
-
+    
     async getUsers(logins) {
         console.log(`Getting users`);
         const result = [];
@@ -50,7 +52,7 @@ class Github {
                 await this.client.users.getByUsername({username}).then((res) => res.data || {})
             )
         }
-        
+
         return result;
     }
 
@@ -78,6 +80,7 @@ class Github {
 
         return repos;
     }
+    
     async getAllTeamMembers (org, team) {
         console.log(`Getting team members list`);
         let i = 0;
@@ -134,60 +137,87 @@ class Github {
         this.cacheManager.set(key, result);
         return result;
     }
-    async getAllPRs (org, repo, state, sort, direction) {
-        console.log(`Getting PRs list`);
-        let i = 0;
-        const perPage = 100;
-        let prs = [];
-        let temporary;
+
+    async getPRs (org, repo, state, startDate, endDate) {
+        const type = state ? `is:${state}` : ''
+        const formatPattern = 'yyyy-MM-dd';
+        const sdate = startDate ? format(startDate, formatPattern) : '2018-01-01';
+        const edate = endDate ? format(endDate, formatPattern) : format(new Date(), formatPattern);
+        let cursor = null;
+        let hasNextPage = null;
+        let after = '';
+        let query = '';
+        let response = null;
+        let result = [];
         do {
-            temporary = await this.client.pulls.list({
-                owner: org,
-                repo: repo,
-                per_page: perPage,
-                state,
-                sort,
-                direction,
-                page: ++i
-            }).then((res) => {
-                return res['data'] || {};
-            }).catch((error) => {
-                console.log('Error occurred during getting prs list: ' + error);
-                throw error;
-            });
+            after = cursor ? `after:"${cursor}"` : '';
+            query = `{
+                search(first: 100, query: "repo:${org}/${repo} is:pr ${type} created:${sdate}..${edate}", type: ISSUE ${after}) {
+                    nodes {
+                        ... on PullRequest {
+                            title
+                            url
+                            author {
+                                login
+                            }
+                        }
+                    }
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                }
+            }`
 
-            prs = [...prs, ...temporary];
-        } while (temporary.length === perPage);
+            response = await graphql(query, {headers: {authorization: `token ${config.parsed.GITHUB_TOKEN}`}});
+            hasNextPage = response.search.pageInfo.hasNextPage;
+            cursor = response.search.pageInfo.endCursor;
+            result = [...result, ...response.search.nodes]
+        } while (hasNextPage);
 
-        return prs;
+        return result;
     }
-    async getAllIssues (org, repo, state, sort, direction) {
-        console.log(`Getting Issues list`);
-        const perPage = 100;
-        let i = 0;
-        let issues = [];
-        let temporary;
+
+    async getIssues (org, repo, state, startDate, endDate) {
+        const type = state ? `is:${state}` : ''
+        const formatPattern = 'yyyy-MM-dd';
+        const sdate = startDate ? format(startDate, formatPattern) : '2018-01-01';
+        const edate = endDate ? format(endDate, formatPattern) : format(new Date(), formatPattern);
+        let cursor = null;
+        let hasNextPage = null;
+        let after = '';
+        let query = '';
+        let response = null;
+        let result = [];
         do {
-            temporary = await this.client.issues.listForRepo({
-                owner: org,
-                repo: repo,
-                per_page: perPage,
-                state,
-                sort,
-                direction,
-                page: ++i
-            }).then((res) => {
-                return res['data'] || {};
-            }).catch((error) => {
-                console.log('Error occurred during getting prs list: ' + error);
-                throw error;
-            });
+            after = cursor ? `after:"${cursor}"` : '';
+            query = `{
+                search(first: 100, query: "repo:${org}/${repo} is:issue ${type} created:${sdate}..${edate}", type: ISSUE ${after}) {
+                    nodes {
+                        ... on Issue {
+                            title
+                            url
+                            author {
+                                login
+                            }
+                        }
+                    }
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                }
+            }`
 
-            issues = [...issues, ...temporary];
-        } while (temporary.length === perPage);
+            response = await graphql(query, {headers: {authorization: `token ${config.parsed.GITHUB_TOKEN}`}});
+            hasNextPage = response.search.pageInfo.hasNextPage;
+            cursor = response.search.pageInfo.endCursor;
+            result = [...result, ...response.search.nodes]
+        } while (hasNextPage);
 
-        return issues;
+        return result;
     }
+    
     async getFile (org, repo, file) {
         return await this.client.repos.getContent({
             owner: org,
@@ -199,6 +229,7 @@ class Github {
 
         });
     }
+    
     async getCommitActivityStats(org, repo) {
         return await this.client.repos.getCommitActivityStats({
             owner: org,

@@ -2,7 +2,7 @@ const GithubClient = require('~/service/github');
 const Writer = require('~/writer');
 
 class GetIssues {
-    constructor (org = 'adobe', repos = [], state = 'all', startDate, endDate, writer) {
+    constructor (org = 'adobe', repos = [], state, startDate, endDate, writer) {
         this.org = org;
         this.state = state;
         this.repos = repos;
@@ -18,15 +18,8 @@ class GetIssues {
 
         for (const repo of repos) {
             const repositoryName = repo.name || repo;
-            let allIssues = await this.client.getAllIssues(this.org, repositoryName, this.state, 'created', 'desc');
-            allIssues = allIssues.filter((issue) => !issue['pull_request']);
-
-            if (this.startDate) {
-                allIssues = allIssues.filter((issue) => (new Date(issue.created_at)).getTime() > this.startDate);
-            }
-            if (this.endDate) {
-                allIssues = allIssues.filter((issue) => (new Date(issue.created_at)).getTime() < this.endDate);
-            }
+            let allIssues = await this.client.getIssues(this.org, repositoryName, this.state, this.startDate, this.endDate);
+            
             result.push({
                 repository: repositoryName,
                 issuesTotal: allIssues.length,
@@ -34,7 +27,7 @@ class GetIssues {
         }
         await this.writer.execute(
             // eslint-disable-next-line max-len
-            `get-issues-with${this.startDate ? '-from-' + new Date(this.startDate).toISOString() : ''}${this.endDate ? '-to-' + new Date(this.endDate).toISOString() : ''}-state-${this.state}-${(new Date()).getTime()}`,
+            `get-issues-with${this.startDate ? '-from-' + new Date(this.startDate).toISOString() : ''}${this.endDate ? '-to-' + new Date(this.endDate).toISOString() : ''}-state-${this.state || 'all'}-${(new Date()).getTime()}`,
             result.sort((first, second) => second.issuesTotal - first.issuesTotal)
         );
     }
