@@ -1,5 +1,6 @@
 const GithubClient = require('~/service/github');
 const Writer = require('~/writer');
+const DateService = require('~/service/date');
 
 class GetReposWithoutCommits {
     constructor (org = 'adobe', repos = [], writer) {
@@ -7,6 +8,7 @@ class GetReposWithoutCommits {
         this.repos = repos;
         this.client = new GithubClient();
         this.writer = (new Writer()).get(writer);
+        this.date = new DateService();
     }
 
     async execute () {
@@ -18,12 +20,10 @@ class GetReposWithoutCommits {
             const content = await this.client.getCommitActivityStats(this.org, repositoryName);
             const repoWithoutCommits = content.filter((item) => item.total);
             if (!repoWithoutCommits.length) {
-                result.push({
-                    repository: repositoryName
-                });
+                result.push({repository: repositoryName});
             }
         }
-        await this.writer.execute(`get-repos-without-commits-${(new Date().getTime())}`, result);
+        await this.writer.execute(`repos-without-commits-${this.date.now()}`, result);
     }
 }
 

@@ -1,6 +1,7 @@
 const GithubClient = require('~/service/github');
 const _lodash = require('lodash');
 const Writer = require('~/writer');
+const DateService = require('~/service/date');
 
 class GetOutsideContributors {
     constructor (org = 'adobe', repos = [], excludeCompany = '@adobe', writer) {
@@ -9,6 +10,7 @@ class GetOutsideContributors {
         this.excludeCompany = excludeCompany;
         this.client = new GithubClient();
         this.writer = (new Writer()).get(writer);
+        this.date = new DateService();
     }
 
     async execute () {
@@ -18,25 +20,24 @@ class GetOutsideContributors {
 
         for (const repo of repos) {
             const repositoryName = repo.name || repo;
-            let allContributors = await this.client.getAllContributors(repositoryName, this.org);
-            allContributors = allContributors.map((contributor) => contributor.login);
-            let outsideContributors = await this.client.getUsers(
-                _lodash.difference(allContributors, members)
-            );
+            let contributors = await this.client.getAllContributors(repositoryName, this.org);
+            contributors = contributors.map((contributor) => contributor.login);
+            let outsideContributors = await this.client.getUsers(_lodash.difference(contributors, members));
             outsideContributors = outsideContributors.filter(
-                (user) => !user.company || user.company.trim() !== this.excludeCompany
+                (user) => !user.company || user.company.trim().toLowerCase() !== this.excludeCompany.toLowerCase()
             ).map(user => user.login);
             
             result.push({
                 repository: repositoryName,
                 outsideContributorsTotal: outsideContributors.length,
-                contributorsTotal: allContributors.length,
+                contributorsTotal: contributors.length,
                 outsideContributors,
-                contributors: allContributors
+                contributors: contributors
             });
         }
+        
         await this.writer.execute(
-            `get-outside-contributors-${(new Date()).getTime()}`,
+            `outside-contributors-${this.date.now()}`,
             result.sort((first, second) => second.outsideContributorsTotal - first.outsideContributorsTotal)
         );
     }

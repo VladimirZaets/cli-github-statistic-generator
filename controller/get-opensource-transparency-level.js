@@ -1,11 +1,13 @@
 const GithubClient = require('~/service/github');
 const Writer = require('~/writer');
+const DateService = require ('~/service/date');
 
 class GetOpensourceTransparencyLevel {
     constructor (org = 'adobe', writer) {
         this.org = org;
         this.client = new GithubClient();
         this.writer = (new Writer().get(writer));
+        this.date = new DateService();
     }
 
     async execute () {
@@ -21,17 +23,11 @@ class GetOpensourceTransparencyLevel {
             }
         };
 
-        for (const repo of repos) {
-            if (repo.private) {
-                ++result.private.value 
-            } else {
-                ++result.public.value
-            }
-        }
-        
-        
-        
-        await this.writer.execute(`get-opensource-transparency-level-${this.org}`, Object.values(result));
+        repos.forEach((repo) => repo.private ? ++result.private.value :++result.public.value);
+        await this.writer.execute(
+            `opensource-transparency-level-${this.org}-${this.date.now()}`, 
+            Object.values(result)
+        );
     }
 }
 

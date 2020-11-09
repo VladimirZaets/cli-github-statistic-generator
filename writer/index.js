@@ -2,7 +2,6 @@ const JSONWriter = require('~/writer/json');
 const CSVWriter = require('~/writer/csv');
 const fs = require('fs');
 
-
 class WriterManager {
     constructor () {
         if (!fs.existsSync(`./dist`)){
@@ -17,7 +16,8 @@ class WriterManager {
     }
 
     get (type) {
-        return type && this.writers[type] ? this.writers[type] : this.writers[this.defaultType];
+        const tp = type.toLowerCase();
+        return type && this.writers[tp] ? this.writers[tp] : this.writers[this.defaultType];
     }
 }
 

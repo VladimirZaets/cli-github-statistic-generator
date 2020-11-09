@@ -2,20 +2,20 @@ const Octokit = require('@octokit/rest').Octokit;
 const config = require('dotenv').config();
 const CacheManager = require('~/cache-manager');
 const { graphql } = require("@octokit/graphql");
-const format = require('date-fns/format')
+const DateService = require('~/service/date');
 
 class Github {
     constructor () {
         this.cacheManager = new CacheManager();
+        this.dateService = new DateService();
         this.client = new Octokit({
             auth: config.parsed.GITHUB_TOKEN
         });
     }
     async getAllRepos (organization, force = false) {
         console.log(`Getting repositories list`);
-        const key = 'all-repos';
+        const key = `${organization}-repos`;
 
-        console.log(1);
         if (!force && this.cacheManager.isExist(key)) {
             return this.cacheManager.get(key);
         }
@@ -141,8 +141,8 @@ class Github {
     async getPRs (org, repo, state, startDate, endDate) {
         const type = state ? `is:${state}` : ''
         const formatPattern = 'yyyy-MM-dd';
-        const sdate = startDate ? format(startDate, formatPattern) : '2018-01-01';
-        const edate = endDate ? format(endDate, formatPattern) : format(new Date(), formatPattern);
+        const sdate = startDate ? this.dateService.format(startDate, formatPattern) : '2018-01-01';
+        const edate = endDate ? this.dateService.format(endDate, formatPattern) : this.dateService.format(new Date(), formatPattern);
         let cursor = null;
         let hasNextPage = null;
         let after = '';
@@ -159,6 +159,10 @@ class Github {
                             url
                             author {
                                 login
+                                ... on User {
+                                    id
+                                    company
+                                }
                             }
                         }
                     }
@@ -199,6 +203,10 @@ class Github {
                             url
                             author {
                                 login
+                                ... on User {
+                                    id
+                                    company
+                                }
                             }
                         }
                     }
