@@ -20,7 +20,8 @@ class GetPullRequests {
 
         for (const repo of repos) {
             const repositoryName = repo.name || repo;
-            const prs = await this.client.getPRs(this.org, repositoryName, this.state, this.startDate, this.endDate);
+            let prs = await this.client.getPRs(this.org, repositoryName, this.state, this.startDate, this.endDate);
+            prs = prs.filter((pr) => pr.author.__typename === 'User')
             
             result.push({
                 repository: repositoryName,
