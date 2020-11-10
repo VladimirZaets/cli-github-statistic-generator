@@ -43,11 +43,14 @@ class GetLevelOfInterest {
                 outside: 0
             }
 
-            prs.forEach((pr) => members.includes(pr.author.login) ||
-                (pr.author.company && pr.author.company.trim().toLowerCase() === this.excludeCompany) ?
-                ++result[repositoryName].inside :
-                ++result[repositoryName].outside
-            );
+            prs.forEach((pr) => {
+                if (pr.author) {
+                    members.includes(pr.author.login) ||
+                    (pr.author.company && pr.author.company.trim().toLowerCase() === this.excludeCompany) ?
+                        ++result[repositoryName].inside :
+                        ++result[repositoryName].outside   
+                }
+            });
         }
 
         const stdate = this.startDate ? '-from-' + this.date.format(this.startDate) : ''
