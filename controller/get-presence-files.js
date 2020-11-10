@@ -25,12 +25,18 @@ class GetPresenceFiles {
             let contains = true;
             for (const file of this.files) {
                 const repositoryName = repo.name || repo;
-                const content = await this.client.getFile(this.org, repositoryName, file);
+                const filenames = file.split('-or-');
+                let content = null;
+                for (const filename of filenames) {
+                    content = await this.client.getFile(this.org, repositoryName, filename);
+                    if (content) { break; }
+                }
+
                 if (!content) { contains = false;}
             }
             contains ? ++result.yes : ++result.no;
         }
-        
+
         const filenames = this.files.join('-').replace('/', '-')
         await this.writer.execute(`presence-files-${filenames}-${this.date.now()}`, [result]);
     }

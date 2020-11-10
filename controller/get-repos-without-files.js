@@ -19,7 +19,13 @@ class GetReposWithoutFiles {
         for (const repo of repos) {
             for (const file of this.files) {
                 const repositoryName = repo.name || repo;
-                const content = await this.client.getFile(this.org, repositoryName, file);
+                const filenames = file.split('-or-');
+                let content = null;
+                for (const filename of filenames) {
+                    content = await this.client.getFile(this.org, repositoryName, filename);
+                    if (content) { break; }
+                }
+                
                 if (!content) {
                     if (!result[repositoryName]){
                         result[repositoryName] = {};
@@ -35,7 +41,7 @@ class GetReposWithoutFiles {
         const filenames = this.files.join('-').replace('/', '-')
         await this.writer.execute(
             `repos-without-${filenames}-${this.date.now()}`, 
-            Object.values(result)
+            Object.keys(result).length ? Object.values(result) : {}
         );
     }
 }
