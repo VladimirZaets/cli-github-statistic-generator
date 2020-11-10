@@ -43,7 +43,7 @@ class Github {
         this.cacheManager.set(key, result);
         return result;
     }
-    
+
     async getUsers(logins) {
         console.log(`Getting users`);
         const result = [];
@@ -80,7 +80,7 @@ class Github {
 
         return repos;
     }
-    
+
     async getAllTeamMembers (org, team) {
         console.log(`Getting team members list`);
         let i = 0;
@@ -185,8 +185,8 @@ class Github {
     async getIssues (org, repo, state, startDate, endDate) {
         const type = state ? `is:${state}` : ''
         const formatPattern = 'yyyy-MM-dd';
-        const sdate = startDate ? format(startDate, formatPattern) : '2018-01-01';
-        const edate = endDate ? format(endDate, formatPattern) : format(new Date(), formatPattern);
+        const sdate = startDate ? this.dateService.format(startDate, formatPattern) : '2018-01-01';
+        const edate = endDate ? this.dateService.format(endDate, formatPattern) : this.dateService.format(new Date(), formatPattern);
         let cursor = null;
         let hasNextPage = null;
         let after = '';
@@ -225,7 +225,7 @@ class Github {
 
         return result;
     }
-    
+
     async getFile (org, repo, file) {
         return await this.client.repos.getContent({
             owner: org,
@@ -237,7 +237,7 @@ class Github {
 
         });
     }
-    
+
     async getCommitActivityStats(org, repo) {
         return await this.client.repos.getCommitActivityStats({
             owner: org,
