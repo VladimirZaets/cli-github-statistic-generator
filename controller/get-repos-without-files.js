@@ -31,8 +31,10 @@ class GetReposWithoutFiles {
                 }
             }
         }
+        
+        const filenames = this.files.join('-').replace('/', '-')
         await this.writer.execute(
-            `repos-without-${this.files.join('-')}-${this.date.now()}`, 
+            `repos-without-${filenames}-${this.date.now()}`, 
             Object.values(result)
         );
     }
