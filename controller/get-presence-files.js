@@ -31,7 +31,7 @@ class GetPresenceFiles {
             contains ? ++result.yes : ++result.no;
         }
         
-        await this.writer.execute(`presence-files-${this.files.join('-')}-${this.date.now()}`, result);
+        await this.writer.execute(`presence-files-${this.files.join('-')}-${this.date.now()}`, [result]);
     }
 }
 
