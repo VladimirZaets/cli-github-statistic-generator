@@ -1,4 +1,4 @@
-const GetIssues = require('~/controller/get-issues');
+const GetIssues = require('~/controller/get-time-to-react');
 
 module.exports = (CLI) => {
     CLI.command('get-time-to-react').alias('gttr')

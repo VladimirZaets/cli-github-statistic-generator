@@ -12,6 +12,7 @@ const getPresenceFiles = require('~/bin/get-presence-files');
 const getNewRepos = require('~/bin/get-new-repos');
 const getLevelOfInterest = require('~/bin/get-level-of-interest');
 const getOpenProcessedPrs = require('~/bin/get-open-processed-prs');
+const getTimeToReact = require('~/bin/get-time-to-react');
 
 const CLI = new Command();
 getOutsideContributors(CLI);
@@ -24,4 +25,5 @@ getPresenceFiles(CLI);
 getNewRepos(CLI);
 getLevelOfInterest(CLI);
 getOpenProcessedPrs(CLI);
+getTimeToReact(CLI);
 CLI.parse(process.argv);

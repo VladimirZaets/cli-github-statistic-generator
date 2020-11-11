@@ -27,7 +27,8 @@ class GetTimeToReact {
 
         for (const repo of repos) {
             const repositoryName = repo.name || repo;
-            const issues = await this.client.getIssues(
+            const timelines = {};
+            const prs = await this.client.getPRs(
                 this.org,
                 repositoryName,
                 this.state,
@@ -35,18 +36,79 @@ class GetTimeToReact {
                 this.endDate
             );
 
+            const startEnd = []
+            for (const pr of prs) {
+                if (!pr.author || pr.author.__typename !== 'User' ) {
+                    continue;
+                }
+
+                const timeline = await this.client.getPRTimeline(this.org, repositoryName, pr.number);
+                const prCreatedAt = (new Date(pr.createdAt)).getTime();
+                if (timeline.length) {
+                    for (const action of timeline) {
+                        const author = action.author || action.actor || {};
+
+                        if (
+                            author.__typename === 'User' &&
+                            author.login &&
+                            author.login !== pr.author.login
+                        ) {
+                            startEnd.push({
+                                start: prCreatedAt,
+                                end: (new Date(action.createdAt)).getTime()
+                            });
+                            break;
+                        }
+                    }
+                } else {
+                    startEnd.push({
+                        start: prCreatedAt,
+                        end: this.date.now()
+                    })
+                }
+            }
+
+            const startEndAvarageCalculated = this.getMinAndMaxAndAvarageReactionTime(startEnd);
+            
             result.push({
                 repository: repositoryName,
-                issuesTotal: issues.length,
+                min: this.date.convertMilisecond(startEndAvarageCalculated.min),
+                max: this.date.convertMilisecond(startEndAvarageCalculated.max),
+                average: this.date.convertMilisecond(startEndAvarageCalculated.average)
             });
         }
 
         const stdate = this.startDate ? '-from-' + this.date.format(this.startDate) : ''
         const eddate = this.endDate ? '-to-' + this.date.format(this.endDate) : '';
         await this.writer.execute(
-            `issues-with${stdate}${eddate}-state-${this.state || 'all'}-${this.date.now()}`,
-            result.sort((first, second) => second.issuesTotal - first.issuesTotal)
+            `time-to-react${stdate}${eddate}-state-${this.state || 'all'}-${this.date.now()}`,
+            result
         );
+    }
+
+    getMinAndMaxAndAvarageReactionTime (data) {
+        const result = {
+            min: null,
+            max: null,
+            average: 0
+        }
+
+        data.forEach((item) => {
+            const time = item.end - item.start;
+            if (!result.min || result.min > time) {
+                result.min = time;
+            }
+
+            if (!result.max || result.max < time) {
+                result.max = time;
+            }
+
+            result.average += time;
+        });
+
+        result.average = result.average / data.length;
+
+        return result;
     }
 }
 

@@ -157,11 +157,19 @@ class Github {
                         ... on PullRequest {
                             title
                             url
+                            number
+                            createdAt
                             author {
                                 login
                                 ... on User {
                                     id
                                     company
+                                    __typename
+                                }
+                                ... on Bot {
+                                    id
+                                    login
+                                    __typename
                                 }
                             }
                         }
@@ -179,6 +187,167 @@ class Github {
             result = [...result, ...response.search.nodes]
         } while (hasNextPage);
 
+        return result;
+    }
+
+    async getPRTimeline(org, repo, number) {
+        let cursor = null;
+        let hasNextPage = null;
+        let after = '';
+        let query = '';
+        let response = null;
+        let result = [];
+        
+        do {
+            after = cursor ? `after:"${cursor}"` : '';
+            query = `query getPRTimeline($org: String!, $repo: String!, $number: Int!) {
+  organization(login: $org) {
+    repository(name: $repo) {
+      pullRequest(number: $number) {
+        timelineItems(first: 100 ${after}) {
+          nodes {
+            ... on AddedToProjectEvent {            
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on AssignedEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on ClosedEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on CrossReferencedEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on IssueComment {
+              author {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on LabeledEvent {
+              createdAt
+              actor {
+                login
+                ... on User {
+                __typename
+                }
+              }
+            }
+            ... on MergedEvent {
+              actor {
+                login
+                ... on User {
+                __typename
+                }
+              }
+              createdAt
+            }
+            ... on PullRequestReview {
+              author {
+                login
+                ... on User {
+                __typename
+                }
+              }
+              createdAt
+            }
+            ... on ReferencedEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on RenamedTitleEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on TransferredEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on UnassignedEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }
+            ... on UnlabeledEvent {
+              actor {
+                login
+                ... on User {
+                  __typename
+                }
+              }
+              createdAt
+            }        
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  }
+}
+`
+            response = await graphql(query, {
+                headers: {authorization: `token ${config.parsed.GITHUB_TOKEN}`},
+                org: org,
+                repo: repo,
+                number: number
+            });
+            
+            let data = response.organization.repository.pullRequest.timelineItems.nodes
+                .filter((item) => Object.keys(item).length);
+            hasNextPage = response.organization.repository.pullRequest.timelineItems.hasNextPage;
+            cursor = response.organization.repository.pullRequest.timelineItems.endCursor;
+            result = [...result, ...data]
+        } while (hasNextPage);
+        
         return result;
     }
 
