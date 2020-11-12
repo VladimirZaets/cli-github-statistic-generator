@@ -36,18 +36,18 @@ class GetTimeToReact {
                 this.endDate
             );
 
-            const startEnd = []
-            for (const pr of prs) {
-                if (!pr.author || pr.author.__typename !== 'User' ) {
-                    continue;
-                }
+            const startEnd = [];
 
+            if (!prs.length) {
+                continue;
+            };
+
+            for (const pr of prs) {
                 const timeline = await this.client.getPRTimeline(this.org, repositoryName, pr.number);
                 const prCreatedAt = (new Date(pr.createdAt)).getTime();
                 if (timeline.length) {
                     for (const action of timeline) {
                         const author = action.author || action.actor || {};
-
                         if (
                             author.__typename === 'User' &&
                             author.login &&
@@ -58,6 +58,11 @@ class GetTimeToReact {
                                 end: (new Date(action.createdAt)).getTime()
                             });
                             break;
+                        } else {
+                            startEnd.push({
+                                start: prCreatedAt,
+                                end: this.date.now()
+                            })
                         }
                     }
                 } else {
@@ -69,7 +74,7 @@ class GetTimeToReact {
             }
 
             const startEndAvarageCalculated = this.getMinAndMaxAndAvarageReactionTime(startEnd);
-            
+
             result.push({
                 repository: repositoryName,
                 min: this.date.convertMilisecond(startEndAvarageCalculated.min),

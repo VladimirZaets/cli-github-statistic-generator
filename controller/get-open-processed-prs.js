@@ -22,9 +22,7 @@ class GetOpenProcessedPrs {
             let openPrs = await this.client.getPRs(this.org, repositoryName, 'open', this.startDate, this.endDate);
             let closedPrs = await this.client.getPRs(this.org, repositoryName, 'closed', this.startDate, this.endDate);
             let mergedPrs = await this.client.getPRs(this.org, repositoryName, 'merged', this.startDate, this.endDate);
-            openPrs = openPrs.filter((pr) => pr.author.__typename === 'User');
-            closedPrs = closedPrs.filter((pr) => pr.author.__typename === 'User');
-            mergedPrs = mergedPrs.filter((pr) => pr.author.__typename === 'User');
+            
             result.push({
                 repository: repositoryName,
                 merged: mergedPrs.length,

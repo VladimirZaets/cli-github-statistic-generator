@@ -187,6 +187,11 @@ class Github {
             result = [...result, ...response.search.nodes]
         } while (hasNextPage);
 
+        const regexp = /\[bot\]/gm;
+        result = result.filter((pr) =>
+            pr.author && pr.author.login.search(regexp) === -1 && pr.author.__typename === 'User'
+        );
+
         return result;
     }
 
@@ -197,7 +202,7 @@ class Github {
         let query = '';
         let response = null;
         let result = [];
-        
+
         do {
             after = cursor ? `after:"${cursor}"` : '';
             query = `query getPRTimeline($org: String!, $repo: String!, $number: Int!) {
@@ -340,14 +345,14 @@ class Github {
                 repo: repo,
                 number: number
             });
-            
+
             let data = response.organization.repository.pullRequest.timelineItems.nodes
                 .filter((item) => Object.keys(item).length);
             hasNextPage = response.organization.repository.pullRequest.timelineItems.hasNextPage;
             cursor = response.organization.repository.pullRequest.timelineItems.endCursor;
             result = [...result, ...data]
         } while (hasNextPage);
-        
+
         return result;
     }
 
