@@ -1,7 +1,9 @@
 const GithubClient = require('~/service/github');
 const Writer = require('~/writer');
 const DateService = require('~/service/date');
-const adobeEmployees = require('~/static/adobe-employees.json');
+const employeesEncrypted = require('~/static/employees.json');
+const CryproService = require('~/service/crypto');
+const config = require('dotenv').config();
 
 class GetLevelOfInterest {
     constructor (
@@ -13,6 +15,8 @@ class GetLevelOfInterest {
         excludeCompany = '@adobe',
         writer
     ) {
+
+        this.crypto = new CryproService();
         this.org = org;
         this.repos = repos;
         this.state = state;
@@ -21,6 +25,7 @@ class GetLevelOfInterest {
         this.client = new GithubClient();
         this.writer = (new Writer()).get(writer);
         this.date = new DateService();
+        this.employees = this.crypto.decryptJSON(employeesEncrypted, config.parsed.SECRET);
     }
 
     async execute () {
@@ -49,7 +54,7 @@ class GetLevelOfInterest {
 
             prs.forEach((pr) => {
                 if (pr.author) {
-                    adobeEmployees.includes(pr.author.login) ||
+                    this.employees.includes(pr.author.login) ||
                     (pr.author.company && pr.author.company.trim().toLowerCase() === this.excludeCompany) ?
                         ++result[repositoryName][`inside-${pr.state.toLowerCase()}`] :
                         ++result[repositoryName][`outside-${pr.state.toLowerCase()}`]
