@@ -2,6 +2,7 @@ const GithubClient = require('~/service/github');
 const _lodash = require('lodash');
 const Writer = require('~/writer');
 const DateService = require('~/service/date');
+const adobeEmployees = require('~/static/adobe-employees.json');
 
 class GetOutsideContributors {
     constructor (org = 'adobe', repos = [], excludeCompany = '@adobe', writer) {
@@ -14,7 +15,6 @@ class GetOutsideContributors {
     }
 
     async execute () {
-        const members = await this.client.getAllOrgMembers(this.org);
         const repos = this.repos.length ? this.repos : await this.client.getAllRepos(this.org);
         const result = [];
 
@@ -22,7 +22,7 @@ class GetOutsideContributors {
             const repositoryName = repo.name || repo;
             let contributors = await this.client.getAllContributors(repositoryName, this.org);
             contributors = contributors.map((contributor) => contributor.login);
-            let outsideContributors = await this.client.getUsers(_lodash.difference(contributors, members));
+            let outsideContributors = await this.client.getUsers(_lodash.difference(contributors, adobeEmployees));
             outsideContributors = outsideContributors.filter(
                 (user) => !user.company || user.company.trim().toLowerCase() !== this.excludeCompany.toLowerCase()
             ).map(user => user.login);

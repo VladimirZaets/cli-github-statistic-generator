@@ -159,6 +159,7 @@ class Github {
                             url
                             number
                             createdAt
+                            state
                             author {
                                 login
                                 ... on User {
@@ -187,9 +188,14 @@ class Github {
             result = [...result, ...response.search.nodes]
         } while (hasNextPage);
 
-        const regexp = /\[bot\]/gm;
-        result = result.filter((pr) =>
-            pr.author && pr.author.login.search(regexp) === -1 && pr.author.__typename === 'User'
+        const regexpFirst = /\[bot\]/gm;
+        const regexpSecond = /(-|^)bot(-|$)/gm;
+        const regexpThird = /dependabot/gm;
+        result = result.filter((pr) => pr.author &&
+                pr.author.login.search(regexpFirst) === -1 &&
+                pr.author.login.search(regexpSecond) === -1 &&
+                pr.author.login.search(regexpThird) === -1 &&
+                pr.author.__typename === 'User'
         );
 
         return result;

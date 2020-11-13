@@ -4,7 +4,6 @@ const DateService = require('~/service/date');
 
 class GetNewRepos {
     constructor (org = 'adobe', repos = [], state, startDate, endDate, writer) {
-        console.log(writer);
         this.org = org;
         this.state = state;
         this.repos = repos;

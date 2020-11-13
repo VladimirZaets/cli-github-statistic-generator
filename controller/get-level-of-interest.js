@@ -1,15 +1,16 @@
 const GithubClient = require('~/service/github');
 const Writer = require('~/writer');
 const DateService = require('~/service/date');
+const adobeEmployees = require('~/static/adobe-employees.json');
 
 class GetLevelOfInterest {
     constructor (
-        org = 'adobe', 
-        repos = [], 
-        state, 
-        startDate, 
-        endDate, 
-        excludeCompany = '@adobe', 
+        org = 'adobe',
+        repos = [],
+        state,
+        startDate,
+        endDate,
+        excludeCompany = '@adobe',
         writer
     ) {
         this.org = org;
@@ -24,31 +25,34 @@ class GetLevelOfInterest {
 
     async execute () {
         const repos = this.repos.length ? this.repos : await this.client.getAllRepos(this.org);
-        const members = await this.client.getAllOrgMembers(this.org);
         const result = {};
 
         for (const repo of repos) {
             const repositoryName = repo.name || repo;
             const prs = await this.client.getPRs(
-                this.org, 
-                repositoryName, 
-                this.state, 
-                this.startDate, 
+                this.org,
+                repositoryName,
+                this.state,
+                this.startDate,
                 this.endDate
             );
-            
+
             result[repositoryName] = {
                 repository: repositoryName,
-                inside: 0,
-                outside: 0
+                'inside-open': 0,
+                'inside-closed': 0,
+                'inside-merged': 0,
+                'outside-open': 0,
+                'outside-closed': 0,
+                'outside-merged': 0
             }
 
             prs.forEach((pr) => {
                 if (pr.author) {
-                    members.includes(pr.author.login) ||
+                    adobeEmployees.includes(pr.author.login) ||
                     (pr.author.company && pr.author.company.trim().toLowerCase() === this.excludeCompany) ?
-                        ++result[repositoryName].inside :
-                        ++result[repositoryName].outside   
+                        ++result[repositoryName][`inside-${pr.state.toLowerCase()}`] :
+                        ++result[repositoryName][`outside-${pr.state.toLowerCase()}`]
                 }
             });
         }
